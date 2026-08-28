@@ -1,0 +1,23 @@
+# Koyeb config for Slavic Launcher backend (PocketBase)
+# NOTE: Koyeb free tier has NO persistent volume — data resets on redeploy.
+# Use Fly.io for production (has persistent volumes on free tier).
+#
+# Deploy: connect GitHub repo at https://app.koyeb.com, or:
+#   koyeb app init slavic-backend --docker path/backend/Dockerfile
+
+services:
+  - name: slavic-launcher-backend
+    docker:
+      build:
+        dockerfile: backend/Dockerfile
+    ports:
+      - port: 8090
+        protocol: http
+    env:
+      - key: PB_ADMIN_EMAIL
+        value: admin@slavic.local
+      - key: PB_ADMIN_PASSWORD
+        value: changeme123
+    health_check:
+      path: /api/health
+      port: 8090
