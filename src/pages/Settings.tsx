@@ -64,7 +64,7 @@ export default function Settings() {
             {javaInstalls.map((j) => <option key={j.path} value={j.path}>{j.version} (Java {j.major}) — {j.path}</option>)}
           </select>
           <div className="flex gap-2 flex-wrap">
-            {[8, 17, 21].map((m) => (
+            {[8, 17, 21, 25].map((m) => (
               <button key={m} onClick={() => installJava(m)} disabled={installingJava === m}
                 className="px-3 py-1.5 rounded-lg text-xs font-medium bg-bg-700 hover:bg-bg-600 transition flex items-center gap-1.5 disabled:opacity-50">
                 {installingJava === m && <Loader2 className="animate-spin" size={12} />}
@@ -111,9 +111,9 @@ export default function Settings() {
             <input type="checkbox" checked={settings.discordRpc} onChange={(e) => update({ discordRpc: e.target.checked })} className="accent-accent w-4 h-4" />
           </label>
           <div>
-            <label className="text-xs text-muted">Backend URL</label>
-            <input value={settings.backendUrl} onChange={(e) => update({ backendUrl: e.target.value })}
-              className="w-full px-3 py-2 rounded-lg bg-bg-900 border border-bg-700 outline-none focus:border-accent text-sm" />
+            <label className="text-xs text-muted">Backend Server (locked)</label>
+            <input value={settings.backendUrl} disabled
+              className="w-full px-3 py-2 rounded-lg bg-bg-900 border border-bg-700 text-sm text-muted cursor-not-allowed" />
           </div>
         </div>
       </section>

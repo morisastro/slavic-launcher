@@ -21,12 +21,30 @@ class LauncherService {
     if (!profile) throw new Error(`Version ${profileId} not installed`);
 
     const settings = settingsService.get();
-    const javaPath = settings.javaPath || (await javaService.detectFor(profile.gameVersion));
-    if (!javaPath) throw new Error("No Java installation found. Install Java in Settings.");
+    let javaPath = settings.javaPath || (await javaService.detectFor(profile.gameVersion));
+
+    // Auto-download Java if none found or if the found one is too old
+    const requiredMajor = await javaService.requiredMajorFromManifest(profile.gameVersion);
+    if (!javaPath || (requiredMajor > 0 && javaService.javaMajorFromPath(javaPath) < requiredMajor)) {
+      const majorToInstall = requiredMajor > 0 ? requiredMajor : 21;
+      emit({ type: "progress", message: `Downloading Java ${majorToInstall}…`, progress: 0.1 });
+      try {
+        const inst = await javaService.install(majorToInstall);
+        javaPath = inst.path;
+        emit({ type: "log", message: `[slavic] Java ${majorToInstall} installed at ${inst.path}` });
+      } catch (err) {
+        throw new Error(`Failed to auto-install Java ${majorToInstall}: ${(err as Error).message}. Install it manually in Settings.`);
+      }
+    }
 
     const versionId = profile.type === "fabric" ? `fabric-${profile.gameVersion}` : profile.gameVersion;
 
-    client.on("data", (log: string) => emit({ type: "log", message: log.trim() }));
+    client.on("data", (log: string) => {
+      emit({ type: "log", message: log.trim() });
+      if (log.includes("UnsupportedClassVersionError")) {
+        emit({ type: "error", message: "Wrong Java version. Install a newer Java in Settings (Java 21 or 25)." });
+      }
+    });
     client.on("debug", (log: string) => emit({ type: "log", message: `[debug] ${log.trim()}` }));
     client.on("progress", (p: { type: string; task: number; total: number }) => {
       const frac = p.total ? p.task / p.total : 0;

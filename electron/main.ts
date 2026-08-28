@@ -4,6 +4,19 @@ import { registerIpc } from "./ipc";
 import { setMainWindow } from "./state";
 import { setupAutoUpdater } from "./updater";
 
+// Monkey-patch child_process.spawn to always hide console windows on Windows.
+// This prevents CMD windows from flashing when Minecraft (or any child) launches.
+const cp = require("child_process");
+const origSpawn = cp.spawn;
+cp.spawn = function (cmd: string, args: string[], opts: any) {
+  const patchedOpts = { ...opts, windowsHide: true };
+  // Force javaw.exe instead of java.exe (no console window)
+  if (cmd && typeof cmd === "string" && cmd.endsWith("java.exe")) {
+    cmd = cmd.replace(/java\.exe$/i, "javaw.exe");
+  }
+  return origSpawn.call(this, cmd, args, patchedOpts);
+};
+
 let win: BrowserWindow | null = null;
 
 function createWindow() {

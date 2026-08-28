@@ -54,12 +54,14 @@ class JavaService {
   }
 
   async detectFor(gameVersion: string): Promise<string | null> {
-    const major = this.requiredMajor(gameVersion);
+    const major = await this.requiredMajorFromManifest(gameVersion);
+    if (major <= 0) return null;
     const installs = this.detect();
-    const match = installs.find((i) => i.major >= major);
+    // prefer the highest java that meets the requirement
+    const match = installs.filter((i) => i.major >= major).sort((a, b) => b.major - a.major)[0];
     if (match) return match.path;
     const record = this.installedList();
-    const dl = record.find((i) => i.major >= major);
+    const dl = record.filter((i) => i.major >= major).sort((a, b) => b.major - a.major)[0];
     return dl?.path ?? null;
   }
 
@@ -67,11 +69,43 @@ class JavaService {
     if (/^1\.(8|9|10|11|12|13|14|15|16)/.test(gameVersion)) return 8;
     if (/^1\.17/.test(gameVersion)) return 16;
     if (/^1\.1[89]/.test(gameVersion) || /^1\.20\.[0-4]/.test(gameVersion)) return 17;
+    if (/^1\.2[01]/.test(gameVersion)) return 21;
     return 21;
+  }
+
+  async requiredMajorFromManifest(gameVersion: string): Promise<number> {
+    // Read the installed version JSON to get the exact required javaVersion.majorVersion
+    try {
+      const fs = await import("fs");
+      const path = await import("path");
+      const { MINECRAFT_DIR } = await import("./storage");
+      // try fabric variant first, then vanilla
+      for (const id of [`fabric-${gameVersion}`, gameVersion]) {
+        const jsonPath = path.join(MINECRAFT_DIR, "versions", id, `${id}.json`);
+        if (fs.existsSync(jsonPath)) {
+          const vj = JSON.parse(fs.readFileSync(jsonPath, "utf8"));
+          if (vj.javaVersion?.majorVersion) return vj.javaVersion.majorVersion;
+        }
+      }
+    } catch {}
+    return this.requiredMajor(gameVersion);
   }
 
   installedList(): JavaInstall[] {
     return readJson<JavaInstall[]>(path.join(DATA_DIR, "java-installs.json"), []);
+  }
+
+  javaMajorFromPath(javaPath: string): number {
+    // try installed list first
+    const inst = this.installedList().find((i) => i.path === javaPath);
+    if (inst) return inst.major;
+    // try detected
+    const det = this.detect().find((i) => i.path === javaPath);
+    if (det) return det.major;
+    // try to parse from path
+    const m = javaPath.match(/jre?[-_]?(\d+)/i) || javaPath.match(/jdk[-_]?(\d+)/i) || javaPath.match(/(\d+)/g);
+    if (m) return parseInt(m[1] || m[0], 10);
+    return 0;
   }
   private saveInstalled(list: JavaInstall[]) {
     writeJson(path.join(DATA_DIR, "java-installs.json"), list);

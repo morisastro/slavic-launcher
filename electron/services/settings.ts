@@ -14,12 +14,13 @@ export interface LauncherSettings {
   fullscreen: boolean;
 }
 
+const BACKEND_URL = "https://slavic-launcher-backend.onrender.com";
 const FILE = path.join(DATA_DIR, "settings.json");
 const DEFAULTS: LauncherSettings = {
   minRam: 1024,
   maxRam: 4096,
   javaPath: "",
-  backendUrl: "https://slavic-launcher-backend.onrender.com",
+  backendUrl: BACKEND_URL,
   discordRpc: true,
   keepLauncherOpen: false,
   windowWidth: 854,
@@ -29,10 +30,13 @@ const DEFAULTS: LauncherSettings = {
 
 class SettingsService {
   get(): LauncherSettings {
-    return { ...DEFAULTS, ...readJson<Partial<LauncherSettings>>(FILE, {}) };
+    return { ...DEFAULTS, ...readJson<Partial<LauncherSettings>>(FILE, {}), backendUrl: BACKEND_URL };
   }
   set(patch: Partial<LauncherSettings>) {
-    const next = { ...this.get(), ...patch };
+    // never allow backendUrl to be changed
+    const { backendUrl, ...safePatch } = patch;
+    void backendUrl;
+    const next = { ...this.get(), ...safePatch, backendUrl: BACKEND_URL };
     writeJson(FILE, next);
     return next;
   }
