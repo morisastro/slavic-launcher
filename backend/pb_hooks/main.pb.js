@@ -1,103 +1,22 @@
-// Slavic Launcher — server-side hooks for PocketBase 0.23
-// Handles redeem code logic securely (marks codes as used, assigns cosmetics).
-// Docs: https://pocketbase.io/docs/js-overview/
-
-// Custom API route: POST /api/redeem
-// Body: { "code": "WELCOME10", "user": "player-uuid" }
-// Marks the code as used and assigns the cosmetic to the user.
+// Debug version — returns what's available on the context
 routerAdd("POST", "/api/redeem", (c) => {
   try {
-    const info = $apis.requestInfo(c);
-    const data = info.body || {};
-    const code = data.code || "";
-    const user = data.user || "";
-
-    if (!code || !user) {
-      return c.json(400, { ok: false, message: "code and user are required" });
-    }
-
-    // Find the code
-    const col = $app.dao().findCollectionByNameOrId("redeem_codes");
-    let record;
-    try {
-      record = $app.dao().findFirstRecordByFilter(
-        col.id,
-        "code = {:code}",
-        { code: code },
-      );
-    } catch (err) {
-      return c.json(404, { ok: false, message: "Invalid code" });
-    }
-
-    if (record.getBool("used")) {
-      return c.json(409, { ok: false, message: "Code already used" });
-    }
-
-    const reward = record.getString("reward") || "Mystery Cosmetic";
-
-    // Mark code as used
-    record.set("used", true);
-    record.set("used_by", user);
-    $app.dao().saveRecord(record);
-
-    // Try to find the cosmetic by name and assign it
-    try {
-      const cosmeticCol = $app.dao().findCollectionByNameOrId("cosmetics");
-      const cosmetic = $app.dao().findFirstRecordByFilter(
-        cosmeticCol.id,
-        "name = {:name}",
-        { name: reward },
-      );
-      const ucCol = $app.dao().findCollectionByNameOrId("user_cosmetics");
-      const uc = new Record(ucCol);
-      uc.set("user", user);
-      uc.set("cosmetic", cosmetic.id);
-      uc.set("equipped", false);
-      $app.dao().saveRecord(uc);
-    } catch (err) {
-      console.log("[slavic] cosmetic not found, code redeemed without assignment");
-    }
-
-    return c.json(200, { ok: true, message: "Unlocked: " + reward, reward: reward });
+    const keys = [];
+    for (const k in c) { keys.push(k); }
+    let bodyVal = null;
+    let dataVal = null;
+    try { bodyVal = c.requestInfo ? c.requestInfo().body : null; } catch(e) { bodyVal = "err:" + e; }
+    try { dataVal = $apis.requestInfo(c).body; } catch(e) { dataVal = "err:" + e; }
+    return c.json(200, {
+      ctxKeys: keys,
+      bodyFromCtx: bodyVal,
+      bodyFromApis: dataVal,
+    });
   } catch (err) {
-    console.log("[slavic] redeem error:", err);
-    return c.json(500, { ok: false, message: "Internal error" });
+    return c.json(500, { error: err + "" });
   }
 });
 
-// Custom API route: GET /api/user-cosmetics/:uuid
-// Returns all cosmetics owned by a user.
-routerAdd("GET", "/api/user-cosmetics/:uuid", (c) => {
-  const uuid = c.pathParam("uuid");
-  const col = $app.dao().findCollectionByNameOrId("user_cosmetics");
-
-  let records = [];
-  try {
-    records = $app.dao().findRecordsByFilter(
-      col.id,
-      "user = {:uuid}",
-      { uuid: uuid },
-    );
-  } catch (err) {
-    return c.json(200, { items: [] });
-  }
-
-  const items = records.map((r) => {
-    let cosmeticName = "";
-    let cosmeticType = "";
-    try {
-      const cid = r.getString("cosmetic");
-      const cos = $app.dao().findRecordById("cosmetics", cid);
-      cosmeticName = cos.getString("name");
-      cosmeticType = cos.getString("type");
-    } catch (e) {}
-    return {
-      id: r.id,
-      cosmetic: cosmeticName,
-      type: cosmeticType,
-      equipped: r.getBool("equipped"),
-    };
-  });
-
-  return c.json(200, { items: items });
+routerAdd("GET", "/api/debug", (c) => {
+  return c.json(200, { ok: true, msg: "debug route works" });
 });
