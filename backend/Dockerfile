@@ -10,10 +10,10 @@ RUN wget -qO /tmp/pb.zip \
     && rm /tmp/pb.zip \
     && chmod +x /pb/pocketbase
 
-# Copy seed script and migration hooks
-COPY seed.sh /pb/seed.sh
-COPY pb_hooks /pb/pb_hooks
-COPY pb_migrations /pb/pb_migrations
+# Copy seed script, hooks, and migrations (paths relative to repo root)
+COPY backend/seed.sh /pb/seed.sh
+COPY backend/pb_hooks /pb/pb_hooks
+COPY backend/pb_migrations /pb/pb_migrations
 RUN chmod +x /pb/seed.sh
 
 # Data directory (on Render free tier this is ephemeral — data resets on redeploy)
