@@ -8,5 +8,5 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: ADMIN_KEY
-        generateValue: true
+        value: slavic-admin-2024
     autoDeploy: true
