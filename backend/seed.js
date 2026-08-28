@@ -29,7 +29,7 @@ export function seedDb() {
   }
 
   if (db.redeemCodes.length === 0) {
-    db.redeemCodes.push({ id: 1, code: "WELCOME10", reward: "Starter Cape", used: false, usedBy: "" });
+    db.redeemCodes.push({ id: 1, code: "WELCOME10", reward: "Starter Cape", maxUses: 0 });
     changed = true;
     console.log("[seed] redeem code added");
   }

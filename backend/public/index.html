@@ -130,6 +130,9 @@
         <input id="codeCode" placeholder="Code (e.g. SUMMER2026)" />
         <input id="codeReward" placeholder="Reward (cosmetic name)" />
       </div>
+      <div class="form-row">
+        <label style="color:#8a96a8;font-size:13px;display:flex;align-items:center;gap:4px"><input type="number" id="codeMaxUses" value="1" min="0" style="max-width:80px" /> Max uses (0 = infinite)</label>
+      </div>
       <button onclick="addCode()">Create Code</button>
       <button onclick="genRandom()">Random Code</button>
       <div id="codeMsg"></div>
@@ -244,14 +247,17 @@ async function loadCodes() {
     const data = await api("/api/admin/codes");
     const el = document.getElementById("codeList");
     if (!data.items.length) { el.innerHTML = '<div class="empty">No codes yet</div>'; return; }
-    el.innerHTML = data.items.map(c => `<div class="item"><div class="item-info"><b>${c.code}</b><span>${c.reward || "—"} ${c.used ? '<span class="badge badge-used">USED</span>' : '<span class="badge badge-ok">available</span>'}</span></div></div>`).join("");
+    el.innerHTML = data.items.map(c => {
+      const uses = c.maxUses > 0 ? `${c.maxUses} use${c.maxUses>1?'s':''}` : `∞ uses`;
+      return `<div class="item"><div class="item-info"><b>${c.code}</b><span>${c.reward || "—"} · ${uses}</span></div></div>`;
+    }).join("");
   } catch (e) { console.error(e); }
 }
 
 async function addCode() {
   try {
-    await api("/api/admin/codes", "POST", { code: codeCode.value, reward: codeReward.value });
-    codeCode.value = codeReward.value = ""; msg("codeMsg", true, "Code created!"); loadCodes();
+    await api("/api/admin/codes", "POST", { code: codeCode.value, reward: codeReward.value, maxUses: parseInt(codeMaxUses.value) || 0 });
+    codeCode.value = codeReward.value = ""; codeMaxUses.value = "1"; msg("codeMsg", true, "Code created!"); loadCodes();
   } catch (e) { msg("codeMsg", false, "Failed: " + e.message); }
 }
 

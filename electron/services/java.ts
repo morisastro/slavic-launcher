@@ -4,8 +4,6 @@ import * as os from "os";
 import { execSync } from "child_process";
 import { MINECRAFT_DIR, readJson, writeJson, DATA_DIR } from "./storage";
 
-const ADOPTIUM = "https://api.adoptium.net/v1/binary";
-
 export interface JavaInstall {
   path: string;
   major: number;
@@ -112,34 +110,27 @@ class JavaService {
   }
 
   async install(major: number): Promise<JavaInstall> {
-    const feature = major <= 8 ? major : null;
-    const releaseType = "jre";
-    const url = feature
-      ? `${ADOPTIUM}/jdk/${major}/windows/x64/${releaseType}/hotspot/normal/eclipse?project=jdk`
-      : `https://api.adoptium.net/v3/assets/feature_releases/${major}/ga?architecture=x64&heap_size=normal&image_type=${releaseType}&jvm_impl=hotspot&os=windows&page=0&page_size=1&project=jdk&sort_method=DATE&sort_order=desc&vendor=eclipse`;
+    // Use the simple /binary/latest/ endpoint (Adoptium). JRE builds were deprecated
+    // for newer versions, so we download the JDK (which includes javaw.exe).
+    const url = `https://api.adoptium.net/v3/binary/latest/${major}/ga/windows/x64/jdk/hotspot/normal/eclipse`;
 
-    const listRes = await fetch(url);
-    if (!listRes.ok) throw new Error("Failed to query Adoptium for Java");
-    const json = await listRes.json();
-    const asset = Array.isArray(json) ? json[0].binary.package : json;
-    if (!asset?.link) throw new Error("No Java download available");
-
-    const destDir = path.join(MINECRAFT_DIR, "java", `jre-${major}`);
+    const destDir = path.join(MINECRAFT_DIR, "java", `jdk-${major}`);
     fs.mkdirSync(destDir, { recursive: true });
     const zipPath = path.join(destDir, "java.zip");
 
-    const dl = await fetch(asset.link);
+    const dl = await fetch(url);
+    if (!dl.ok) throw new Error(`Adoptium returned ${dl.status} for Java ${major}`);
     const ab = await dl.arrayBuffer();
     fs.writeFileSync(zipPath, Buffer.from(ab));
 
-    // Extract via tar (Windows 10+ has tar)
+    // Extract via tar (Windows 10+ has tar built-in)
     execSync(`tar -xf "${zipPath}" -C "${destDir}"`, { stdio: "inherit" });
     fs.unlinkSync(zipPath);
 
     // find javaw.exe
     const javaw = this.findExe(destDir, "javaw.exe");
     if (!javaw) throw new Error("Extraction succeeded but javaw.exe not found");
-    const inst: JavaInstall = { path: javaw, major, version: asset.name ?? `jre-${major}` };
+    const inst: JavaInstall = { path: javaw, major, version: `jdk-${major}` };
     const list = this.installedList();
     list.push(inst);
     this.saveInstalled(list);

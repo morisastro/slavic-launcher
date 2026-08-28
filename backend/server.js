@@ -15,6 +15,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
+// Redirect /download to the latest portable .exe on GitHub Releases
+const DOWNLOAD_URL = process.env.DOWNLOAD_URL || "https://github.com/morisastro/slavic-launcher/releases/latest";
+app.get("/download", (req, res) => res.redirect(DOWNLOAD_URL));
+app.get("/api/download", (req, res) => res.redirect(DOWNLOAD_URL));
+
 initDb();
 seedDb();
 
@@ -47,23 +52,36 @@ app.post("/api/redeem", (req, res) => {
   if (!record) {
     return res.status(404).json({ ok: false, message: "Invalid code" });
   }
-  if (record.used) {
-    return res.status(409).json({ ok: false, message: "Code already used" });
+
+  // Check usage limits: infinite (maxUses <= 0) or count < maxUses
+  const usedCount = db.userCosmetics.filter((uc) => uc.code === code).length;
+  if (record.maxUses > 0 && usedCount >= record.maxUses) {
+    return res.status(409).json({ ok: false, message: "Code has reached its usage limit" });
+  }
+
+  // Check if this specific user already used this code
+  if (db.userCosmetics.some((uc) => uc.code === code && uc.user === user)) {
+    return res.status(409).json({ ok: false, message: "You already redeemed this code" });
   }
 
   const reward = record.reward || "Mystery Cosmetic";
-  record.used = true;
-  record.usedBy = user;
 
   let cosmeticAssigned = false;
   const cosmetic = db.cosmetics.find((c) => c.name === reward);
   if (cosmetic) {
-    db.userCosmetics.push({ id: Date.now(), user, cosmeticId: cosmetic.id, equipped: false });
+    db.userCosmetics.push({ id: Date.now(), user, cosmeticId: cosmetic.id, equipped: false, code });
     cosmeticAssigned = true;
   }
 
   saveDb();
-  res.json({ ok: true, message: `Unlocked: ${reward}`, reward, cosmeticAssigned });
+  const remaining = record.maxUses > 0 ? record.maxUses - usedCount - 1 : -1;
+  res.json({
+    ok: true,
+    message: `Unlocked: ${reward}`,
+    reward,
+    cosmeticAssigned,
+    remaining: remaining === -1 ? "∞" : remaining,
+  });
 });
 
 // GET /api/user-cosmetics/:uuid
@@ -137,10 +155,15 @@ app.post("/api/admin/cosmetics", (req, res) => {
 
 // Redeem codes
 app.post("/api/admin/codes", (req, res) => {
-  const { code, reward } = req.body;
+  const { code, reward, maxUses } = req.body;
   if (!code) return res.status(400).json({ ok: false, message: "code required" });
   if (db.redeemCodes.find((c) => c.code === code)) return res.status(409).json({ ok: false, message: "code already exists" });
-  const item = { id: Date.now(), code, reward: reward || "Mystery Cosmetic", used: false, usedBy: "" };
+  const item = {
+    id: Date.now(),
+    code,
+    reward: reward || "Mystery Cosmetic",
+    maxUses: maxUses === undefined ? 1 : parseInt(maxUses) || 0, // 0 = infinite
+  };
   db.redeemCodes.push(item);
   saveDb();
   res.json({ ok: true, id: item.id });

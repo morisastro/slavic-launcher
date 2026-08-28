@@ -13,6 +13,8 @@
     "preview": "vite preview",
     "dist": "npm run build && electron-builder",
     "dist:win": "npm run build && electron-builder --win --x64",
+    "dist:portable": "npm run build && electron-builder --win portable --x64",
+    "dist:zip": "npm run build && electron-builder --win zip --x64",
     "lint": "eslint src electron --ext .ts,.tsx",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p electron/tsconfig.json --noEmit"
   },
@@ -54,12 +56,17 @@
       "dist-electron/**/*"
     ],
     "win": {
-      "target": "nsis",
-      "icon": "build/icon.ico"
+      "target": ["portable"],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "SlavicLauncher-Portable-${version}.exe"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
+      "artifactName": "SlavicLauncher-Setup-${version}.exe",
       "publish": {
         "provider": "github",
         "owner": "slaviclauncher",
