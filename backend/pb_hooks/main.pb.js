@@ -6,56 +6,63 @@
 // Body: { "code": "WELCOME10", "user": "player-uuid" }
 // Marks the code as used and assigns the cosmetic to the user.
 routerAdd("POST", "/api/redeem", (c) => {
-  const data = $apis.requestInfo(c).data || {};
-  const code = data.code || "";
-  const user = data.user || "";
-
-  if (!code || !user) {
-    return c.json(400, { ok: false, message: "code and user are required" });
-  }
-
-  // Find the code
-  const col = $app.dao().findCollectionByNameOrId("redeem_codes");
-  let record;
   try {
-    record = $app.dao().findFirstRecordByFilter(
-      col.id,
-      `code = "${code}"`,
-    );
+    const info = $apis.requestInfo(c);
+    const data = info.body || {};
+    const code = data.code || "";
+    const user = data.user || "";
+
+    if (!code || !user) {
+      return c.json(400, { ok: false, message: "code and user are required" });
+    }
+
+    // Find the code
+    const col = $app.dao().findCollectionByNameOrId("redeem_codes");
+    let record;
+    try {
+      record = $app.dao().findFirstRecordByFilter(
+        col.id,
+        "code = {:code}",
+        { code: code },
+      );
+    } catch (err) {
+      return c.json(404, { ok: false, message: "Invalid code" });
+    }
+
+    if (record.getBool("used")) {
+      return c.json(409, { ok: false, message: "Code already used" });
+    }
+
+    const reward = record.getString("reward") || "Mystery Cosmetic";
+
+    // Mark code as used
+    record.set("used", true);
+    record.set("used_by", user);
+    $app.dao().saveRecord(record);
+
+    // Try to find the cosmetic by name and assign it
+    try {
+      const cosmeticCol = $app.dao().findCollectionByNameOrId("cosmetics");
+      const cosmetic = $app.dao().findFirstRecordByFilter(
+        cosmeticCol.id,
+        "name = {:name}",
+        { name: reward },
+      );
+      const ucCol = $app.dao().findCollectionByNameOrId("user_cosmetics");
+      const uc = new Record(ucCol);
+      uc.set("user", user);
+      uc.set("cosmetic", cosmetic.id);
+      uc.set("equipped", false);
+      $app.dao().saveRecord(uc);
+    } catch (err) {
+      console.log("[slavic] cosmetic not found, code redeemed without assignment");
+    }
+
+    return c.json(200, { ok: true, message: "Unlocked: " + reward, reward: reward });
   } catch (err) {
-    return c.json(404, { ok: false, message: "Invalid code" });
+    console.log("[slavic] redeem error:", err);
+    return c.json(500, { ok: false, message: "Internal error" });
   }
-
-  if (record.getBool("used")) {
-    return c.json(409, { ok: false, message: "Code already used" });
-  }
-
-  const reward = record.getString("reward") || "Mystery Cosmetic";
-
-  // Mark code as used
-  record.set("used", true);
-  record.set("used_by", user);
-  $app.dao().saveRecord(record);
-
-  // Try to find the cosmetic by name and assign it
-  try {
-    const cosmeticCol = $app.dao().findCollectionByNameOrId("cosmetics");
-    const cosmetic = $app.dao().findFirstRecordByFilter(
-      cosmeticCol.id,
-      `name = "${reward}"`,
-    );
-    const ucCol = $app.dao().findCollectionByNameOrId("user_cosmetics");
-    const uc = new Record(ucCol);
-    uc.set("user", user);
-    uc.set("cosmetic", cosmetic.id);
-    uc.set("equipped", false);
-    $app.dao().saveRecord(uc);
-  } catch (err) {
-    // cosmetic not found — code is still redeemed, just no cosmetic record
-    console.log(`[slavic] cosmetic "${reward}" not found, code redeemed without assignment`);
-  }
-
-  return c.json(200, { ok: true, message: `Unlocked: ${reward}`, reward });
 });
 
 // Custom API route: GET /api/user-cosmetics/:uuid
@@ -64,11 +71,12 @@ routerAdd("GET", "/api/user-cosmetics/:uuid", (c) => {
   const uuid = c.pathParam("uuid");
   const col = $app.dao().findCollectionByNameOrId("user_cosmetics");
 
-  let records;
+  let records = [];
   try {
     records = $app.dao().findRecordsByFilter(
       col.id,
-      `user = "${uuid}"`,
+      "user = {:uuid}",
+      { uuid: uuid },
     );
   } catch (err) {
     return c.json(200, { items: [] });
@@ -91,5 +99,5 @@ routerAdd("GET", "/api/user-cosmetics/:uuid", (c) => {
     };
   });
 
-  return c.json(200, { items });
+  return c.json(200, { items: items });
 });
