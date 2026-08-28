@@ -19,7 +19,7 @@ const DEFAULTS: LauncherSettings = {
   minRam: 1024,
   maxRam: 4096,
   javaPath: "",
-  backendUrl: "https://slavic-backend.fly.dev",
+  backendUrl: "https://slavic-launcher-backend.onrender.com",
   discordRpc: true,
   keepLauncherOpen: false,
   windowWidth: 854,
