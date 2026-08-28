@@ -25,5 +25,5 @@ EXPOSE 8090
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1:8090/api/health || exit 1
 
-# Entrypoint: run migrations, seed, then serve
-CMD ["/bin/sh", "-c", "/pb/pocketbase migrate up && /pb/seed.sh & /pb/pocketbase serve --http=0.0.0.0:8090 --publicDir=/pb/pb_public"]
+# Entrypoint: run migrations + seed sequentially, then serve
+CMD ["/bin/sh", "-c", "/pb/pocketbase migrate up && /pb/seed.sh && /pb/pocketbase serve --http=0.0.0.0:8090 --publicDir=/pb/pb_public"]

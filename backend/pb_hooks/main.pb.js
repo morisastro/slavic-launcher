@@ -2,10 +2,6 @@
 // Handles redeem code logic securely (marks codes as used, assigns cosmetics).
 // Docs: https://pocketbase.io/docs/js-overview/
 
-onRecordAfterCreate((e) => {
-  console.log(`[slavic] new record in ${e.collection?.name || "?"}: ${e.record?.id}`);
-}, "user_cosmetics");
-
 // Custom API route: POST /api/redeem
 // Body: { "code": "WELCOME10", "user": "player-uuid" }
 // Marks the code as used and assigns the cosmetic to the user.
