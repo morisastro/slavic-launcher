@@ -12,14 +12,9 @@ routerAdd("POST", "/api/redeem", (c) => {
       return c.json(400, { ok: false, message: "code and user are required" });
     }
 
-    const col = $app.dao().findCollectionByNameOrId("redeem_codes");
     let record;
     try {
-      record = $app.dao().findFirstRecordByFilter(
-        col.id,
-        "code = {:code}",
-        { code: code },
-      );
+      record = $app.dao().findFirstRecordByData("redeem_codes", "code", code);
     } catch (err) {
       return c.json(404, { ok: false, message: "Invalid code" });
     }
@@ -34,42 +29,34 @@ routerAdd("POST", "/api/redeem", (c) => {
     record.set("used_by", user);
     $app.dao().saveRecord(record);
 
+    // Try to find the cosmetic by name and assign it
+    let cosmeticAssigned = false;
     try {
-      const cosmeticCol = $app.dao().findCollectionByNameOrId("cosmetics");
-      const cosmetic = $app.dao().findFirstRecordByFilter(
-        cosmeticCol.id,
-        "name = {:name}",
-        { name: reward },
-      );
+      const cosmetic = $app.dao().findFirstRecordByData("cosmetics", "name", reward);
       const ucCol = $app.dao().findCollectionByNameOrId("user_cosmetics");
       const uc = new Record(ucCol);
       uc.set("user", user);
       uc.set("cosmetic", cosmetic.id);
       uc.set("equipped", false);
       $app.dao().saveRecord(uc);
+      cosmeticAssigned = true;
     } catch (err) {
-      console.log("[slavic] cosmetic not found, code redeemed without assignment");
+      console.log("[slavic] cosmetic '" + reward + "' not found, code redeemed without assignment");
     }
 
-    return c.json(200, { ok: true, message: "Unlocked: " + reward, reward: reward });
+    return c.json(200, { ok: true, message: "Unlocked: " + reward, reward: reward, cosmeticAssigned: cosmeticAssigned });
   } catch (err) {
     console.log("[slavic] redeem error:", err);
-    return c.json(500, { ok: false, message: "Internal error" });
+    return c.json(500, { ok: false, message: "Internal error", detail: err + "" });
   }
 });
 
 // GET /api/user-cosmetics/:uuid  — returns cosmetics owned by a user
 routerAdd("GET", "/api/user-cosmetics/:uuid", (c) => {
   const uuid = c.pathParam("uuid");
-  const col = $app.dao().findCollectionByNameOrId("user_cosmetics");
-
   let records = [];
   try {
-    records = $app.dao().findRecordsByFilter(
-      col.id,
-      "user = {:uuid}",
-      { uuid: uuid },
-    );
+    records = $app.dao().findRecordsByFilter("user_cosmetics", "user = {:uuid}", { uuid: uuid });
   } catch (err) {
     return c.json(200, { items: [] });
   }
