@@ -13,10 +13,11 @@ RUN wget -qO /tmp/pb.zip \
 # Copy seed script and migration hooks
 COPY seed.sh /pb/seed.sh
 COPY pb_hooks /pb/pb_hooks
+COPY pb_migrations /pb/pb_migrations
 RUN chmod +x /pb/seed.sh
 
-# Persistent data lives here (mount a volume on this path in production)
-VOLUME /pb/pb_data
+# Data directory (on Render free tier this is ephemeral — data resets on redeploy)
+RUN mkdir -p /pb/pb_data /pb/pb_public
 
 EXPOSE 8090
 
@@ -24,5 +25,5 @@ EXPOSE 8090
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://127.0.0.1:8090/api/health || exit 1
 
-# Entrypoint: run migrations, seed if needed, then serve
+# Entrypoint: run migrations, seed, then serve
 CMD ["/bin/sh", "-c", "/pb/pocketbase migrate up && /pb/seed.sh & /pb/pocketbase serve --http=0.0.0.0:8090 --publicDir=/pb/pb_public"]

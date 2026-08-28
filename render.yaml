@@ -1,9 +1,3 @@
-# Render.com Blueprint for Slavic Launcher backend (PocketBase)
-# NOTE: Render free tier has NO persistent disk — data resets on redeploy.
-# Use Fly.io instead for production, or upgrade Render for a persistent disk.
-#
-# Deploy: push to GitHub, connect repo at https://render.com, Render reads this file.
-
 services:
   - type: web
     name: slavic-launcher-backend
@@ -13,9 +7,9 @@ services:
     healthCheckPath: /api/health
     envVars:
       - key: PB_ADMIN_EMAIL
-        sync: false
+        value: admin@slavic.local
       - key: PB_ADMIN_PASSWORD
-        sync: false
+        value: changeme123
       - key: PB_URL
         value: http://0.0.0.0:8090
     autoDeploy: true
