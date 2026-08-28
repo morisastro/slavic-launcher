@@ -46,8 +46,8 @@ routerAdd("POST", "/api/redeem", (c) => {
 
     return c.json(200, { ok: true, message: "Unlocked: " + reward, reward: reward, cosmeticAssigned: cosmeticAssigned });
   } catch (err) {
-    console.log("[slavic] redeem error:", err);
-    return c.json(500, { ok: false, message: "Internal error", detail: err + "" });
+    console.log("[slavic] redeem error:", JSON.stringify(err), err.message, err.stack);
+    return c.json(500, { ok: false, message: "Internal error", detail: err + "", stack: err.stack ? err.stack + "" : null });
   }
 });
 
