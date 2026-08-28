@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import { fileURLToPath } from "url";
+import path from "path";
 import { db, initDb, saveDb } from "./db.js";
 import { seedDb } from "./seed.js";
 
@@ -7,8 +9,11 @@ const app = express();
 const PORT = process.env.PORT || 8090;
 const ADMIN_KEY = process.env.ADMIN_KEY || "slavic-admin-secret";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "public")));
 
 initDb();
 seedDb();

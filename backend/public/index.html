@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Slavic Launcher — Admin</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI',system-ui,sans-serif; }
+  body { background:#0a0d12; color:#e5e7eb; padding:20px; }
+  .login { max-width:400px; margin:80px auto; text-align:center; }
+  .login input { width:100%; padding:12px; margin:8px 0; background:#141a22; border:1px solid #2a3543; border-radius:8px; color:#fff; font-size:14px; }
+  .login button { width:100%; padding:12px; background:#5b8cff; color:#fff; border:none; border-radius:8px; cursor:pointer; font-weight:600; }
+  .login button:hover { background:#7aa4ff; }
+  .login h1 { margin-bottom:8px; }
+  .login p { color:#8a96a8; font-size:13px; margin-bottom:16px; }
+  .panel { max-width:1000px; margin:0 auto; }
+  .header { display:flex; justify-content:space-between; align-items:center; margin-bottom:24px; padding-bottom:16px; border-bottom:1px solid #1c2530; }
+  .header h1 { font-size:20px; }
+  .tabs { display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; }
+  .tab { padding:8px 16px; background:#141a22; border:1px solid #2a3543; border-radius:8px; cursor:pointer; font-size:13px; }
+  .tab.active { background:#5b8cff; color:#fff; border-color:#5b8cff; }
+  .card { background:#141a22; border:1px solid #1c2530; border-radius:12px; padding:20px; margin-bottom:16px; }
+  .card h2 { font-size:16px; margin-bottom:12px; }
+  .form-row { display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
+  input, textarea, select { padding:8px 12px; background:#0a0d12; border:1px solid #2a3543; border-radius:6px; color:#fff; font-size:13px; }
+  input { flex:1; min-width:120px; }
+  textarea { width:100%; min-height:60px; resize:vertical; }
+  button { padding:8px 16px; background:#5b8cff; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:13px; font-weight:500; }
+  button:hover { background:#7aa4ff; }
+  button.danger { background:#ff5b5b; }
+  button.danger:hover { background:#ff7a7a; }
+  .item { display:flex; justify-content:space-between; align-items:center; padding:10px; background:#0a0d12; border-radius:6px; margin-bottom:6px; }
+  .item-info { flex:1; }
+  .item-info b { font-size:13px; }
+  .item-info span { display:block; color:#8a96a8; font-size:12px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; }
+  .badge-used { background:#ff5b5b20; color:#ff5b5b; }
+  .badge-ok { background:#3dd68c20; color:#3dd68c; }
+  .empty { text-align:center; color:#8a96a8; padding:24px; font-size:13px; }
+  .msg { padding:8px 12px; border-radius:6px; margin:8px 0; font-size:13px; }
+  .msg-ok { background:#3dd68c20; color:#3dd68c; }
+  .msg-err { background:#ff5b5b20; color:#ff5b5b; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+
+<div id="login" class="login">
+  <h1>Slavic Launcher Admin</h1>
+  <p>Enter your admin key to continue</p>
+  <input type="password" id="keyInput" placeholder="Admin key (x-admin-key)" />
+  <button onclick="login()">Login</button>
+  <div id="loginMsg"></div>
+</div>
+
+<div id="panel" class="panel hidden">
+  <div class="header">
+    <h1>Slavic Launcher — Admin Panel</h1>
+    <button onclick="logout()">Logout</button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('news')">News</div>
+    <div class="tab" onclick="showTab('servers')">Servers</div>
+    <div class="tab" onclick="showTab('cosmetics')">Cosmetics</div>
+    <div class="tab" onclick="showTab('codes')">Redeem Codes</div>
+    <div class="tab" onclick="showTab('users')">Users</div>
+  </div>
+
+  <div id="tab-news">
+    <div class="card">
+      <h2>Add News</h2>
+      <input id="newsTitle" placeholder="Title" />
+      <div style="height:8px"></div>
+      <textarea id="newsBody" placeholder="Body text"></textarea>
+      <div style="height:8px"></div>
+      <input id="newsDate" type="date" />
+      <div style="height:8px"></div>
+      <button onclick="addNews()">Add News</button>
+      <div id="newsMsg"></div>
+    </div>
+    <div class="card">
+      <h2>Existing News</h2>
+      <div id="newsList"></div>
+    </div>
+  </div>
+
+  <div id="tab-servers" class="hidden">
+    <div class="card">
+      <h2>Add Server</h2>
+      <div class="form-row">
+        <input id="srvName" placeholder="Name" />
+        <input id="srvIp" placeholder="IP (play.example.com)" />
+      </div>
+      <div class="form-row">
+        <input id="srvDesc" placeholder="Description" />
+        <input id="srvMax" type="number" placeholder="Max players" style="max-width:120px" />
+      </div>
+      <button onclick="addServer()">Add Server</button>
+      <div id="srvMsg"></div>
+    </div>
+    <div class="card">
+      <h2>Existing Servers</h2>
+      <div id="srvList"></div>
+    </div>
+  </div>
+
+  <div id="tab-cosmetics" class="hidden">
+    <div class="card">
+      <h2>Add Cosmetic</h2>
+      <div class="form-row">
+        <input id="cosName" placeholder="Name" />
+        <select id="cosType"><option value="cape">cape</option><option value="hat">hat</option><option value="emote">emote</option><option value="color">color</option></select>
+        <select id="cosRarity"><option value="common">common</option><option value="rare">rare</option><option value="epic">epic</option><option value="legendary">legendary</option></select>
+      </div>
+      <input id="cosDesc" placeholder="Description" />
+      <div style="height:8px"></div>
+      <button onclick="addCosmetic()">Add Cosmetic</button>
+      <div id="cosMsg"></div>
+    </div>
+    <div class="card">
+      <h2>Existing Cosmetics</h2>
+      <div id="cosList"></div>
+    </div>
+  </div>
+
+  <div id="tab-codes" class="hidden">
+    <div class="card">
+      <h2>Generate Redeem Code</h2>
+      <div class="form-row">
+        <input id="codeCode" placeholder="Code (e.g. SUMMER2026)" />
+        <input id="codeReward" placeholder="Reward (cosmetic name)" />
+      </div>
+      <button onclick="addCode()">Create Code</button>
+      <button onclick="genRandom()">Random Code</button>
+      <div id="codeMsg"></div>
+    </div>
+    <div class="card">
+      <h2>All Codes</h2>
+      <div id="codeList"></div>
+    </div>
+  </div>
+
+  <div id="tab-users" class="hidden">
+    <div class="card">
+      <h2>Users</h2>
+      <div id="userList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+let KEY = localStorage.getItem("adminKey") || "";
+
+if (KEY) { document.getElementById("login").classList.add("hidden"); document.getElementById("panel").classList.remove("hidden"); loadAll(); }
+
+function login() {
+  KEY = document.getElementById("keyInput").value.trim();
+  if (!KEY) return;
+  fetch(`${API}/api/admin/codes`, { headers: { "x-admin-key": KEY } })
+    .then(r => { if (r.ok) { localStorage.setItem("adminKey", KEY); document.getElementById("login").classList.add("hidden"); document.getElementById("panel").classList.remove("hidden"); loadAll(); } else { document.getElementById("loginMsg").innerHTML = '<div class="msg msg-err">Invalid key</div>'; } })
+    .catch(() => { document.getElementById("loginMsg").innerHTML = '<div class="msg msg-err">Cannot reach backend</div>'; });
+}
+
+function logout() { localStorage.removeItem("adminKey"); KEY = ""; location.reload(); }
+
+const API = window.location.origin;
+
+function showTab(tab) {
+  document.querySelectorAll(".tab").forEach((t, i) => t.classList.remove("active"));
+  event.target.classList.add("active");
+  document.querySelectorAll('[id^="tab-"]').forEach(d => d.classList.add("hidden"));
+  document.getElementById("tab-" + tab).classList.remove("hidden");
+}
+
+function msg(id, ok, text) {
+  document.getElementById(id).innerHTML = `<div class="msg ${ok ? "msg-ok" : "msg-err"}">${text}</div>`;
+  setTimeout(() => { document.getElementById(id).innerHTML = ""; }, 3000);
+}
+
+async function api(path, method, body) {
+  const opts = { method, headers: { "Content-Type": "application/json", "x-admin-key": KEY } };
+  if (body) opts.body = JSON.stringify(body);
+  const res = await fetch(`${API}${path}`, opts);
+  if (!res.ok) throw new Error(`${res.status}`);
+  return res.json();
+}
+
+async function loadAll() { loadNews(); loadServers(); loadCosmetics(); loadCodes(); loadUsers(); }
+
+async function loadNews() {
+  try {
+    const data = await api("/api/news");
+    const el = document.getElementById("newsList");
+    if (!data.items.length) { el.innerHTML = '<div class="empty">No news yet</div>'; return; }
+    el.innerHTML = data.items.map(n => `<div class="item"><div class="item-info"><b>${n.title}</b><span>${n.date}</span></div><button class="danger" onclick="delNews(${n.id})">Delete</button></div>`).join("");
+  } catch (e) { console.error(e); }
+}
+
+async function addNews() {
+  try {
+    await api("/api/admin/news", "POST", { title: newsTitle.value, body: newsBody.value, date: newsDate.value });
+    newsTitle.value = newsBody.value = ""; msg("newsMsg", true, "News added!"); loadNews();
+  } catch (e) { msg("newsMsg", false, "Failed: " + e.message); }
+}
+
+async function delNews(id) { await api(`/api/admin/news/${id}`, "DELETE"); loadNews(); }
+
+async function loadServers() {
+  try {
+    const data = await api("/api/servers");
+    const el = document.getElementById("srvList");
+    if (!data.items.length) { el.innerHTML = '<div class="empty">No servers yet</div>'; return; }
+    el.innerHTML = data.items.map(s => `<div class="item"><div class="item-info"><b>${s.name}</b><span>${s.ip} — ${s.players}/${s.maxPlayers} players</span></div><button class="danger" onclick="delSrv(${s.id})">Delete</button></div>`).join("");
+  } catch (e) { console.error(e); }
+}
+
+async function addServer() {
+  try {
+    await api("/api/admin/servers", "POST", { name: srvName.value, ip: srvIp.value, description: srvDesc.value, maxPlayers: parseInt(srvMax.value) || 100, online: true });
+    srvName.value = srvIp.value = srvDesc.value = srvMax.value = ""; msg("srvMsg", true, "Server added!"); loadServers();
+  } catch (e) { msg("srvMsg", false, "Failed: " + e.message); }
+}
+
+async function delSrv(id) { await api(`/api/admin/servers/${id}`, "DELETE"); loadServers(); }
+
+async function loadCosmetics() {
+  try {
+    const data = await api("/api/cosmetics");
+    const el = document.getElementById("cosList");
+    if (!data.items.length) { el.innerHTML = '<div class="empty">No cosmetics yet</div>'; return; }
+    el.innerHTML = data.items.map(c => `<div class="item"><div class="item-info"><b>${c.name}</b><span>${c.type} · ${c.rarity}</span></div></div>`).join("");
+  } catch (e) { console.error(e); }
+}
+
+async function addCosmetic() {
+  try {
+    await api("/api/admin/cosmetics", "POST", { name: cosName.value, type: cosType.value, rarity: cosRarity.value, description: cosDesc.value });
+    cosName.value = cosDesc.value = ""; msg("cosMsg", true, "Cosmetic added!"); loadCosmetics();
+  } catch (e) { msg("cosMsg", false, "Failed: " + e.message); }
+}
+
+async function loadCodes() {
+  try {
+    const data = await api("/api/admin/codes");
+    const el = document.getElementById("codeList");
+    if (!data.items.length) { el.innerHTML = '<div class="empty">No codes yet</div>'; return; }
+    el.innerHTML = data.items.map(c => `<div class="item"><div class="item-info"><b>${c.code}</b><span>${c.reward || "—"} ${c.used ? '<span class="badge badge-used">USED</span>' : '<span class="badge badge-ok">available</span>'}</span></div></div>`).join("");
+  } catch (e) { console.error(e); }
+}
+
+async function addCode() {
+  try {
+    await api("/api/admin/codes", "POST", { code: codeCode.value, reward: codeReward.value });
+    codeCode.value = codeReward.value = ""; msg("codeMsg", true, "Code created!"); loadCodes();
+  } catch (e) { msg("codeMsg", false, "Failed: " + e.message); }
+}
+
+function genRandom() { codeCode.value = Math.random().toString(36).slice(2, 10).toUpperCase(); }
+
+async function loadUsers() {
+  try {
+    const data = await api("/api/admin/users");
+    const el = document.getElementById("userList");
+    if (!data.items.length) { el.innerHTML = '<div class="empty">No users yet. Users are created when they redeem codes.</div>'; return; }
+    el.innerHTML = data.items.map(u => `<div class="item"><div class="item-info"><b>${u.username}</b><span>${u.uuid}${u.discord_id ? " · Discord: " + u.discord_id : ""}</span></div></div>`).join("");
+  } catch (e) { console.error(e); }
+}
+</script>
+</body>
+</html>
