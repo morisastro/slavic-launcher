@@ -37,14 +37,14 @@ class SettingsService {
     return next;
   }
 
-  // ---- backend (PocketBase) ----
+  // ---- backend (Express) ----
   async fetchNews(): Promise<{ id: string; title: string; body: string; image?: string; date: string }[]> {
     const base = this.get().backendUrl;
     try {
-      const res = await fetch(`${base}/api/collections/news/records?sort=-date`);
+      const res = await fetch(`${base}/api/news`);
       if (!res.ok) return [];
       const json: any = await res.json();
-      return (json.items ?? []).map((i: any) => ({ id: i.id, title: i.title, body: i.body, image: i.image ? `${base}/api/files/news/${i.id}/${i.image}` : undefined, date: i.date }));
+      return (json.items ?? []).map((i: any) => ({ id: String(i.id), title: i.title, body: i.body, date: i.date }));
     } catch {
       return [];
     }
@@ -53,10 +53,10 @@ class SettingsService {
   async fetchServers(): Promise<{ id: string; name: string; ip: string; description: string; online: boolean; players?: number; maxPlayers?: number; icon?: string }[]> {
     const base = this.get().backendUrl;
     try {
-      const res = await fetch(`${base}/api/collections/servers/records`);
+      const res = await fetch(`${base}/api/servers`);
       if (!res.ok) return [];
       const json: any = await res.json();
-      return (json.items ?? []).map((i: any) => ({ id: i.id, name: i.name, ip: i.ip, description: i.description, online: i.online ?? false, players: i.players, maxPlayers: i.maxPlayers, icon: i.icon ? `${base}/api/files/servers/${i.id}/${i.icon}` : undefined }));
+      return (json.items ?? []).map((i: any) => ({ id: String(i.id), name: i.name, ip: i.ip, description: i.description, online: !!i.online, players: i.players, maxPlayers: i.maxPlayers }));
     } catch {
       return [];
     }

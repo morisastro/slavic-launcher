@@ -1,15 +1,12 @@
 services:
   - type: web
     name: slavic-launcher-backend
-    runtime: docker
-    dockerfilePath: ./backend/Dockerfile
+    runtime: node
     plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
     healthCheckPath: /api/health
     envVars:
-      - key: PB_ADMIN_EMAIL
-        value: admin@slavic.local
-      - key: PB_ADMIN_PASSWORD
-        value: changeme123
-      - key: PB_URL
-        value: http://0.0.0.0:8090
+      - key: ADMIN_KEY
+        generateValue: true
     autoDeploy: true

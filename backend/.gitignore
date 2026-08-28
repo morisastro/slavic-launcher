@@ -1,6 +1,5 @@
-pocketbase
-pocketbase.exe
-pb_data/
-pb_public/
+node_modules/
+data/
 *.db
-*.db-journal
+*.db-wal
+*.db-shm
