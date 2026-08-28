@@ -1,77 +1,13 @@
 /// <reference path="../pb_data/types.d.ts" />
 migrate((app) => {
-  // Helper to build a text field
-  const textField = (name, opts = {}) => ({
-    hidden: false,
-    id: "text" + Math.random().toString().slice(2, 12),
-    name,
-    presentable: false,
-    required: opts.required || false,
-    system: false,
-    type: "text",
-    min: opts.min || 0,
-    max: opts.max || 0,
-    pattern: opts.pattern || "",
-    autogeneratePattern: "",
-  });
-
-  const boolField = (name) => ({
-    hidden: false,
-    id: "bool" + Math.random().toString().slice(2, 12),
-    name,
-    presentable: false,
-    required: false,
-    system: false,
-    type: "bool",
-  });
-
-  const numberField = (name) => ({
-    hidden: false,
-    id: "number" + Math.random().toString().slice(2, 12),
-    name,
-    presentable: false,
-    required: false,
-    system: false,
-    type: "number",
-    min: 0,
-    max: 0,
-  });
-
-  const dateField = (name) => ({
-    hidden: false,
-    id: "date" + Math.random().toString().slice(2, 12),
-    name,
-    presentable: false,
-    required: false,
-    system: false,
-    type: "date",
-    min: "",
-    max: "",
-  });
-
-  const fileField = (name) => ({
-    hidden: false,
-    id: "file" + Math.random().toString().slice(2, 12),
-    name,
-    presentable: false,
-    required: false,
-    system: false,
-    type: "file",
-    maxSelect: 1,
-    maxSize: 5242880,
-    mimeTypes: ["image/png", "image/jpeg"],
-    thumbs: [],
-    protected: false,
-  });
-
   const collections = [
     {
       name: "users",
       fields: [
-        textField("username", { required: true, max: 40 }),
-        textField("uuid", { required: true, max: 64 }),
-        textField("discord_id", { max: 32 }),
-        textField("avatar_url", { max: 500 }),
+        { name: "username", type: "text", required: true, options: { max: 40 } },
+        { name: "uuid", type: "text", required: true, options: { max: 64 } },
+        { name: "discord_id", type: "text", options: { max: 32 } },
+        { name: "avatar_url", type: "text", options: { max: 500 } },
       ],
     },
     {
@@ -79,20 +15,20 @@ migrate((app) => {
       listRule: "",
       viewRule: "",
       fields: [
-        textField("name", { required: true, max: 60 }),
-        textField("description", { max: 500 }),
-        textField("type", { required: true, max: 20 }),
-        textField("rarity", { max: 20 }),
-        fileField("image"),
-        textField("model_url", { max: 500 }),
+        { name: "name", type: "text", required: true, options: { max: 60 } },
+        { name: "description", type: "text", options: { max: 500 } },
+        { name: "type", type: "text", required: true, options: { max: 20 } },
+        { name: "rarity", type: "text", options: { max: 20 } },
+        { name: "image", type: "file", options: { maxSelect: 1, mimeTypes: ["image/png", "image/jpeg"] } },
+        { name: "model_url", type: "text", options: { max: 500 } },
       ],
     },
     {
       name: "user_cosmetics",
       fields: [
-        textField("user", { required: true, max: 64 }),
-        textField("cosmetic", { required: true, max: 64 }),
-        boolField("equipped"),
+        { name: "user", type: "text", required: true, options: { max: 64 } },
+        { name: "cosmetic", type: "text", required: true, options: { max: 64 } },
+        { name: "equipped", type: "bool" },
       ],
     },
     {
@@ -100,10 +36,10 @@ migrate((app) => {
       listRule: "",
       viewRule: "",
       fields: [
-        textField("code", { required: true, max: 40 }),
-        textField("reward", { max: 60 }),
-        boolField("used"),
-        textField("used_by", { max: 64 }),
+        { name: "code", type: "text", required: true, options: { max: 40 } },
+        { name: "reward", type: "text", options: { max: 60 } },
+        { name: "used", type: "bool" },
+        { name: "used_by", type: "text", options: { max: 64 } },
       ],
     },
     {
@@ -111,10 +47,10 @@ migrate((app) => {
       listRule: "",
       viewRule: "",
       fields: [
-        textField("title", { required: true, max: 120 }),
-        textField("body", { required: true }),
-        fileField("image"),
-        dateField("date"),
+        { name: "title", type: "text", required: true, options: { max: 120 } },
+        { name: "body", type: "text", required: true },
+        { name: "image", type: "file", options: { maxSelect: 1, mimeTypes: ["image/png", "image/jpeg"] } },
+        { name: "date", type: "date" },
       ],
     },
     {
@@ -122,13 +58,13 @@ migrate((app) => {
       listRule: "",
       viewRule: "",
       fields: [
-        textField("name", { required: true, max: 60 }),
-        textField("ip", { required: true, max: 120 }),
-        textField("description", { max: 500 }),
-        boolField("online"),
-        numberField("players"),
-        numberField("maxPlayers"),
-        fileField("icon"),
+        { name: "name", type: "text", required: true, options: { max: 60 } },
+        { name: "ip", type: "text", required: true, options: { max: 120 } },
+        { name: "description", type: "text", options: { max: 500 } },
+        { name: "online", type: "bool" },
+        { name: "players", type: "number" },
+        { name: "maxPlayers", type: "number" },
+        { name: "icon", type: "file", options: { maxSelect: 1, mimeTypes: ["image/png", "image/jpeg"] } },
       ],
     },
   ];
@@ -138,11 +74,9 @@ migrate((app) => {
     try {
       collection = app.findCollectionByNameOrId(c.name);
     } catch (e) {
-      collection = new Collection();
-      collection.name = c.name;
-      collection.type = "base";
+      collection = new Collection(c);
     }
-    collection.fields = c.fields;
+    // Apply listRule/viewRule for public-read collections
     if (c.listRule !== undefined) collection.listRule = c.listRule;
     if (c.viewRule !== undefined) collection.viewRule = c.viewRule;
     app.save(collection);
