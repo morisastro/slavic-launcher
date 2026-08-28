@@ -53,16 +53,29 @@ class VersionsService {
     const profile = (await res.json()) as any;
     const versionId = `fabric-${gameVersion}`;
     profile.id = versionId;
-    // ensure downloads.client exists so MCLC can fetch the vanilla client jar
-    if (!profile.downloads?.client) {
-      const vanillaDir = path.join(MINECRAFT_DIR, "versions", gameVersion, `${gameVersion}.json`);
-      if (fs.existsSync(vanillaDir)) {
-        const vanilla = JSON.parse(fs.readFileSync(vanillaDir, "utf8"));
+
+    // Merge vanilla profile data into fabric profile (libraries, downloads, assets)
+    const vanillaPath = path.join(MINECRAFT_DIR, "versions", gameVersion, `${gameVersion}.json`);
+    if (fs.existsSync(vanillaPath)) {
+      const vanilla = JSON.parse(fs.readFileSync(vanillaPath, "utf8"));
+      // copy client jar download info
+      if (!profile.downloads?.client) {
         profile.downloads = { ...(vanilla.downloads || {}) };
-        profile.assetIndex = vanilla.assetIndex;
-        profile.assets = vanilla.assets;
       }
+      profile.assetIndex = vanilla.assetIndex;
+      profile.assets = vanilla.assets;
+      // merge libraries: vanilla first, then fabric (fabric libs override by name)
+      const vanillaLibs = vanilla.libraries || [];
+      const fabricLibs = profile.libraries || [];
+      const fabricLibNames = new Set(fabricLibs.map((l: any) => l.name));
+      profile.libraries = [...vanillaLibs.filter((l: any) => !fabricLibNames.has(l.name)), ...fabricLibs];
+      // copy other fields fabric needs
+      if (vanilla.mainClass && !profile.mainClass) profile.mainClass = vanilla.mainClass;
+      profile.type = vanilla.type || "release";
+      profile.minecraftArguments = vanilla.minecraftArguments;
+      profile.arguments = vanilla.arguments || { game: [], jvm: [] };
     }
+
     const dir = path.join(MINECRAFT_DIR, "versions", versionId);
     fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(path.join(dir, `${versionId}.json`), JSON.stringify(profile, null, 2));
