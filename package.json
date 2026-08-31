@@ -53,7 +53,8 @@
     },
     "files": [
       "dist/**/*",
-      "dist-electron/**/*"
+      "dist-electron/**/*",
+      "electron/resources/**/*"
     ],
     "win": {
       "target": ["portable"],

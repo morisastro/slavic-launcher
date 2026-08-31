@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "slavicmod",
+  "version": "${version}",
+  "name": "Slavic MOD",
+  "description": "Lunar-like HUD, zoom, and FPS overlay for Slavic Launcher.",
+  "authors": ["Slavic Launcher"],
+  "contact": {
+    "homepage": "https://github.com/morisastro/slavic-launcher"
+  },
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.slavic.mod.SlavicMod"],
+    "client": ["com.slavic.mod.SlavicClientMod"]
+  },
+  "depends": {
+    "fabricloader": ">=${loader_version}",
+    "fabric-api": "*",
+    "minecraft": "${minecraft_version}",
+    "java": ">=17"
+  }
+}

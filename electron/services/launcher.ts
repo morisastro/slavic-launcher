@@ -4,6 +4,7 @@ import { authService } from "./auth";
 import { versionsService } from "./versions";
 import { javaService } from "./java";
 import { settingsService } from "./settings";
+import { modpackService } from "./modpack";
 
 export interface LaunchEvent {
   type: "progress" | "log" | "error" | "started" | "closed" | "done";
@@ -19,6 +20,11 @@ class LauncherService {
     if (!account) throw new Error("No active account. Add an account first.");
     const profile = versionsService.installed().find((v) => v.id === profileId);
     if (!profile) throw new Error(`Version ${profileId} not installed`);
+
+    // Auto-install Slavic MOD for Fabric versions
+    if (profile.type === "fabric") {
+      modpackService.ensureInstalled(profile.gameVersion);
+    }
 
     const settings = settingsService.get();
     let javaPath = settings.javaPath || (await javaService.detectFor(profile.gameVersion));

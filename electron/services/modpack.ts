@@ -1,89 +1,36 @@
 import * as fs from "fs";
 import * as path from "path";
 import { MINECRAFT_DIR, readJson, writeJson, DATA_DIR } from "./storage";
-import { modrinthService } from "./modrinth";
 
-const API = "https://api.modrinth.com/v2";
-
-// Slavic Modpack — curated Lunar-like mods (by slug)
-export interface ModpackEntry {
-  slug: string;
-  category: "performance" | "visual" | "hud" | "cosmetic" | "utility";
-  title: string;
-  description: string;
-  required: boolean;
-}
-
-export const SLAVIC_MODPACK: ModpackEntry[] = [
-  // Performance
-  { slug: "sodium", category: "performance", title: "Sodium", description: "Massive FPS boost. Modern rendering engine.", required: true },
-  { slug: "lithium", category: "performance", title: "Lithium", description: "Server-side optimization. Smoother gameplay.", required: true },
-  { slug: "fabric-api", category: "performance", title: "Fabric API", description: "Required by most Fabric mods.", required: true },
-  { slug: "entityculling", category: "performance", title: "Entity Culling", description: "Skip rendering hidden entities.", required: false },
-  // Visual
-  { slug: "iris", category: "visual", title: "Iris Shaders", description: "Shader support (OptiFine replacement).", required: true },
-  { slug: "reeses-sodium-options", category: "visual", title: "Reese's Sodium Options", description: "Better video settings menu.", required: false },
-  // HUD
-  { slug: "modmenu", category: "hud", title: "Mod Menu", description: "In-game mod list.", required: true },
-  { slug: "zoomify", category: "utility", title: "Zoomify", description: "Smooth zoom (C key).", required: false },
-];
-
-export interface ModpackInstallResult {
-  slug: string;
-  title: string;
-  installed: boolean;
-  error?: string;
+// The Slavic MOD jar is bundled with the launcher.
+// In dev: read from mod/build/libs/. In prod: read from app resources.
+function findSlavicJar(): string | null {
+  const candidates = [
+    path.join(__dirname, "..", "resources", "slavicmod.jar"),
+    path.join(process.cwd(), "electron", "resources", "slavicmod.jar"),
+    path.join(process.cwd(), "mod", "build", "libs", "slavicmod-1.0.0.jar"),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
 }
 
 class ModpackService {
-  // Get project IDs for all modpack mods by searching Modrinth
-  async getProjectIds(): Promise<Record<string, string>> {
-    const ids: Record<string, string> = {};
-    for (const entry of SLAVIC_MODPACK) {
-      try {
-        const res = await fetch(`${API}/project/${entry.slug}`, {
-          headers: { "User-Agent": "slavic-launcher/0.1" },
-        });
-        if (res.ok) {
-          const proj = (await res.json()) as { id: string };
-          ids[entry.slug] = proj.id;
-        }
-      } catch {}
-    }
-    return ids;
-  }
-
-  // Install the full Slavic Modpack for a given game version
-  async installAll(gameVersion: string): Promise<ModpackInstallResult[]> {
-    const projectIds = await this.getProjectIds();
-    const results: ModpackInstallResult[] = [];
-
-    for (const entry of SLAVIC_MODPACK) {
-      const projectId = projectIds[entry.slug];
-      if (!projectId) {
-        results.push({ slug: entry.slug, title: entry.title, installed: false, error: "Project not found" });
-        continue;
-      }
-
-      try {
-        // Find latest version for this game version + fabric
-        const versions = await modrinthService.versions(projectId, gameVersion, "fabric");
-        if (versions.length === 0) {
-          results.push({ slug: entry.slug, title: entry.title, installed: false, error: "No compatible version" });
-          continue;
-        }
-        // Sort by date (newest first) — Modrinth returns newest first usually
-        const latest = versions[0];
-        await modrinthService.install(projectId, latest.id, gameVersion);
-        results.push({ slug: entry.slug, title: entry.title, installed: true });
-      } catch (err) {
-        results.push({ slug: entry.slug, title: entry.title, installed: false, error: (err as Error).message });
-      }
+  // Install the Slavic MOD jar into the mods folder for a given game version.
+  install(gameVersion: string): { ok: boolean; error?: string } {
+    const jar = findSlavicJar();
+    if (!jar) {
+      return { ok: false, error: "Slavic MOD jar not found. Build it first: cd mod && gradlew.bat build" };
     }
 
-    // Mark modpack as installed for this version
+    const modsDir = path.join(MINECRAFT_DIR, "mods", gameVersion);
+    fs.mkdirSync(modsDir, { recursive: true });
+    const dest = path.join(modsDir, "slavicmod.jar");
+    fs.copyFileSync(jar, dest);
+
     this.setInstalled(gameVersion, true);
-    return results;
+    return { ok: true };
   }
 
   isInstalled(gameVersion: string): boolean {
@@ -96,8 +43,21 @@ class ModpackService {
     writeJson(file, installed);
   }
 
-  list(): ModpackEntry[] {
-    return SLAVIC_MODPACK;
+  // Also ensure the mod is installed when launching
+  ensureInstalled(gameVersion: string) {
+    if (!this.isInstalled(gameVersion)) {
+      this.install(gameVersion);
+    } else {
+      // re-copy in case the jar was updated
+      const jar = findSlavicJar();
+      if (jar) {
+        const dest = path.join(MINECRAFT_DIR, "mods", gameVersion, "slavicmod.jar");
+        if (!fs.existsSync(dest) || fs.statSync(dest).size !== fs.statSync(jar).size) {
+          fs.mkdirSync(path.dirname(dest), { recursive: true });
+          fs.copyFileSync(jar, dest);
+        }
+      }
+    }
   }
 }
 

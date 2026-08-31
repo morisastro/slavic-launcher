@@ -10,8 +10,6 @@ export default function Versions() {
   const [installing, setInstalling] = useState<{ id: string; type: string } | null>(null);
   const [fabricModal, setFabricModal] = useState<string | null>(null);
   const [loaders, setLoaders] = useState<{ loaderVersion: string; stable: boolean }[]>([]);
-  const [modpackModal, setModpackModal] = useState<string | null>(null);
-  const [modpackResults, setModpackResults] = useState<any[] | null>(null);
   const [modpackInstalling, setModpackInstalling] = useState(false);
 
   useEffect(() => { modpack.init(); }, [modpack]);
@@ -135,8 +133,14 @@ export default function Versions() {
               </div>
               {fab && (
                 <button
-                  onClick={() => setModpackModal(v.id)}
-                  className="w-full mt-2 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                  onClick={async () => {
+                    if (modpack.installed[v.id]) return;
+                    setModpackInstalling(true);
+                    await modpack.install(v.id);
+                    setModpackInstalling(false);
+                  }}
+                  disabled={modpack.installed[v.id] || modpackInstalling}
+                  className="w-full mt-2 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition disabled:opacity-70"
                   style={{
                     background: modpack.installed[v.id]
                       ? "rgba(61,214,140,0.15)"
@@ -145,8 +149,10 @@ export default function Versions() {
                     border: "1px solid rgba(91,140,255,0.3)",
                   }}
                 >
-                  <Sparkles size={13} />
-                  {modpack.installed[v.id] ? "Slavic MOD ✓" : "Install Slavic MOD"}
+                  {modpackInstalling ? <><Loader2 className="animate-spin" size={13} /> Installing…</> : <>
+                    <Sparkles size={13} />
+                    {modpack.installed[v.id] ? "Slavic MOD ✓" : "Install Slavic MOD"}
+                  </>}
                 </button>
               )}
             </div>
@@ -173,76 +179,6 @@ export default function Versions() {
                 {l.stable && <span className="text-[10px] px-2 py-0.5 rounded bg-ok/20 text-ok">stable</span>}
               </button>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* Slavic MOD modal */}
-      {modpackModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => { if (!modpackInstalling) setModpackModal(null); }}>
-          <div className="w-[28rem] max-h-[70vh] overflow-y-auto bg-bg-800 rounded-2xl border border-bg-700 p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2 mb-1">
-              <Sparkles className="text-accent" size={20} />
-              <h3 className="font-bold text-lg">Slavic MOD</h3>
-            </div>
-            <p className="text-xs text-muted mb-4">Lunar-like experience for {modpackModal}. {modpack.list.length} mods included.</p>
-
-            {!modpackResults && (
-              <>
-                <div className="space-y-2 mb-4">
-                  {modpack.list.map((m: any) => (
-                    <div key={m.slug} className="flex items-start gap-3 p-2.5 rounded-lg bg-bg-900 border border-bg-700">
-                      <div className="mt-0.5">
-                        {m.category === "performance" ? <Zap size={15} className="text-warn" /> : m.category === "visual" ? <Sparkles size={15} className="text-accent" /> : <Check size={15} className="text-ok" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium flex items-center gap-2">
-                          {m.title}
-                          {m.required && <span className="text-[9px] px-1.5 py-0.5 rounded bg-warn/20 text-warn">required</span>}
-                        </div>
-                        <div className="text-xs text-muted">{m.description}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <button
-                  disabled={modpackInstalling}
-                  onClick={async () => {
-                    setModpackInstalling(true);
-                    const res = await modpack.install(modpackModal);
-                    setModpackInstalling(false);
-                    if (res?.ok) {
-                      setModpackResults(res.results);
-                    }
-                  }}
-                  className="w-full py-3 rounded-xl bg-accent text-white font-semibold hover:bg-accent-glow transition flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  {modpackInstalling ? <><Loader2 className="animate-spin" size={18} /> Installing {modpack.list.length} mods…</> : <><Download size={18} /> Install Modpack</>}
-                </button>
-              </>
-            )}
-
-            {modpackResults && (
-              <>
-                <div className="space-y-2 mb-4">
-                  {modpackResults.map((r) => (
-                    <div key={r.slug} className="flex items-center justify-between p-2.5 rounded-lg bg-bg-900 border border-bg-700">
-                      <div>
-                        <div className="text-sm font-medium">{r.title}</div>
-                        {r.error && <div className="text-xs text-err">{r.error}</div>}
-                      </div>
-                      {r.installed ? <Check size={16} className="text-ok" /> : <span className="text-xs text-err">✗</span>}
-                    </div>
-                  ))}
-                </div>
-                <button
-                  onClick={() => { setModpackModal(null); setModpackResults(null); }}
-                  className="w-full py-3 rounded-xl bg-accent text-white font-semibold hover:bg-accent-glow transition"
-                >
-                  Done
-                </button>
-              </>
-            )}
           </div>
         </div>
       )}

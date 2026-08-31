@@ -65,19 +65,16 @@ export function registerIpc() {
     modrinthService.remove(gameVersion, modId),
   );
 
-  // ---- modpack (Slavic Lunar-like bundle) ----
-  ipcMain.handle("modpack:list", () => modpackService.list());
+  // ---- modpack (Slavic custom MOD) ----
+  ipcMain.handle("modpack:list", () => [
+    { slug: "slavicmod", title: "Slavic MOD", category: "custom", description: "Lunar-like HUD, zoom, FPS counter.", required: true },
+  ]);
   ipcMain.handle("modpack:is-installed", (_e, gameVersion: string) =>
     modpackService.isInstalled(gameVersion),
   );
-  ipcMain.handle("modpack:install", async (_e, gameVersion: string) => {
-    try {
-      const results = await modpackService.installAll(gameVersion);
-      return { ok: true, results };
-    } catch (err) {
-      return { ok: false, error: (err as Error).message };
-    }
-  });
+  ipcMain.handle("modpack:install", (_e, gameVersion: string) =>
+    modpackService.install(gameVersion),
+  );
 
   // ---- java ----
   ipcMain.handle("java:detect", () => javaService.detect());

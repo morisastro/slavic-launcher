@@ -140,7 +140,7 @@ export const useModpack = create<any>((set, get) => ({
     set({ loading: true });
     try {
       const res = (await window.slavic.invoke("modpack:install", gameVersion)) as any;
-      if (res.ok) {
+      if (res?.ok) {
         set((s: any) => ({ installed: { ...s.installed, [gameVersion]: true } }));
       }
       return res;
