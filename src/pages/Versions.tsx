@@ -146,7 +146,7 @@ export default function Versions() {
                   }}
                 >
                   <Sparkles size={13} />
-                  {modpack.installed[v.id] ? "Slavic Modpack ✓" : "Install Slavic Modpack"}
+                  {modpack.installed[v.id] ? "Slavic MOD ✓" : "Install Slavic MOD"}
                 </button>
               )}
             </div>
@@ -177,13 +177,13 @@ export default function Versions() {
         </div>
       )}
 
-      {/* Slavic Modpack modal */}
+      {/* Slavic MOD modal */}
       {modpackModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={() => { if (!modpackInstalling) setModpackModal(null); }}>
           <div className="w-[28rem] max-h-[70vh] overflow-y-auto bg-bg-800 rounded-2xl border border-bg-700 p-5" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-2 mb-1">
               <Sparkles className="text-accent" size={20} />
-              <h3 className="font-bold text-lg">Slavic Modpack</h3>
+              <h3 className="font-bold text-lg">Slavic MOD</h3>
             </div>
             <p className="text-xs text-muted mb-4">Lunar-like experience for {modpackModal}. {modpack.list.length} mods included.</p>
 
