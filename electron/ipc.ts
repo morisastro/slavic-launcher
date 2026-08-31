@@ -3,6 +3,7 @@ import { getMainWindow } from "./state";
 import { authService } from "./services/auth";
 import { launcherService } from "./services/launcher";
 import { modrinthService } from "./services/modrinth";
+import { modpackService } from "./services/modpack";
 import { versionsService } from "./services/versions";
 import { javaService } from "./services/java";
 import { settingsService } from "./services/settings";
@@ -63,6 +64,20 @@ export function registerIpc() {
   ipcMain.handle("modrinth:remove", (_e, gameVersion: string, modId: string) =>
     modrinthService.remove(gameVersion, modId),
   );
+
+  // ---- modpack (Slavic Lunar-like bundle) ----
+  ipcMain.handle("modpack:list", () => modpackService.list());
+  ipcMain.handle("modpack:is-installed", (_e, gameVersion: string) =>
+    modpackService.isInstalled(gameVersion),
+  );
+  ipcMain.handle("modpack:install", async (_e, gameVersion: string) => {
+    try {
+      const results = await modpackService.installAll(gameVersion);
+      return { ok: true, results };
+    } catch (err) {
+      return { ok: false, error: (err as Error).message };
+    }
+  });
 
   // ---- java ----
   ipcMain.handle("java:detect", () => javaService.detect());

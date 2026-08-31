@@ -123,3 +123,29 @@ export const useMods = create<ModsStore>((set, get) => ({
     await get().loadInstalled(gameVersion);
   },
 }));
+
+export const useModpack = create<any>((set, get) => ({
+  list: [],
+  installed: {},
+  loading: false,
+  init: async () => {
+    const list = (await window.slavic.invoke("modpack:list")) as any[];
+    set({ list });
+  },
+  check: async (gameVersion: string) => {
+    const installed = (await window.slavic.invoke("modpack:is-installed", gameVersion)) as boolean;
+    set((s: any) => ({ installed: { ...s.installed, [gameVersion]: installed } }));
+  },
+  install: async (gameVersion: string) => {
+    set({ loading: true });
+    try {
+      const res = (await window.slavic.invoke("modpack:install", gameVersion)) as any;
+      if (res.ok) {
+        set((s: any) => ({ installed: { ...s.installed, [gameVersion]: true } }));
+      }
+      return res;
+    } finally {
+      set({ loading: false });
+    }
+  },
+}));
