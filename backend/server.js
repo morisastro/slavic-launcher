@@ -20,8 +20,13 @@ const DOWNLOAD_URL = process.env.DOWNLOAD_URL || "https://github.com/morisastro/
 app.get("/download", (req, res) => res.redirect(DOWNLOAD_URL));
 app.get("/api/download", (req, res) => res.redirect(DOWNLOAD_URL));
 
-initDb();
-seedDb();
+initDb().then(() => {
+  seedDb();
+  app.listen(PORT, () => {
+    console.log(`Slavic Launcher backend running on port ${PORT}`);
+    console.log(`Storage: ${process.env.GITHUB_TOKEN ? "GitHub Gist" : "local file"}`);
+  });
+});
 
 // ---- public routes ----
 
@@ -176,8 +181,4 @@ app.get("/api/admin/codes", (req, res) => {
 // Users
 app.get("/api/admin/users", (req, res) => {
   res.json({ items: db.users });
-});
-
-app.listen(PORT, () => {
-  console.log(`Slavic Launcher backend running on port ${PORT}`);
 });
