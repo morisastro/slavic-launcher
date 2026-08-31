@@ -16,7 +16,7 @@ public class ZoomFeature {
             "key.slavic.zoom",
             InputUtil.Type.KEYSYM,
             GLFW.GLFW_KEY_C,
-            "Slavic MOD"
+            KeyBinding.Category.MOVEMENT
         ));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {

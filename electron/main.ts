@@ -3,6 +3,7 @@ import * as path from "path";
 import { registerIpc } from "./ipc";
 import { setMainWindow } from "./state";
 import { setupAutoUpdater } from "./updater";
+import { ensureDirs } from "./services/storage";
 
 // Patch child_process to NEVER show a CMD window on Windows.
 // MCLC uses spawn, exec, and execSync — all patched here.
@@ -71,6 +72,7 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  ensureDirs();
   registerIpc();
   createWindow();
   setupAutoUpdater();

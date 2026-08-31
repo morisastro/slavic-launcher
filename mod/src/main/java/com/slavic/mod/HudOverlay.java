@@ -12,7 +12,9 @@ public class HudOverlay {
     public static void init() {
         HudRenderCallback.EVENT.register((context, tickDelta) -> {
             MinecraftClient client = MinecraftClient.getInstance();
-            if (client.player == null || client.options.debugEnabled) return;
+            if (client.player == null) return;
+            // Skip if F3 debug screen is open
+            if (client.getDebugHud().shouldShowDebugHud()) return;
 
             frameCount++;
             long now = System.currentTimeMillis();
@@ -26,20 +28,20 @@ public class HudOverlay {
             int py = client.player.getBlockPos().getY();
             int pz = client.player.getBlockPos().getZ();
 
-            context.drawTextWithShadow(
+            context.drawText(
                 client.textRenderer,
                 Text.literal("\u00a7b\u00a7lSlavic MOD"),
-                5, 5, 0x5B8CFF
+                5, 5, 0x5B8CFF, true
             );
-            context.drawTextWithShadow(
+            context.drawText(
                 client.textRenderer,
                 Text.literal("\u00a77FPS: \u00a7f" + fps),
-                5, 17, 0xFFFFFF
+                5, 17, 0xFFFFFF, true
             );
-            context.drawTextWithShadow(
+            context.drawText(
                 client.textRenderer,
                 Text.literal("\u00a77XYZ: \u00a7f" + px + " \u00a77/ \u00a7f" + py + " \u00a77/ \u00a7f" + pz),
-                5, 29, 0xAAAAAA
+                5, 29, 0xAAAAAA, true
             );
         });
     }
