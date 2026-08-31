@@ -8,10 +8,6 @@ services:
     envVars:
       - key: ADMIN_KEY
         value: slavic-admin-2024
-      - key: GIST_ID
-        value: 82a0c6bac90f35b40a4d7da01055a363
-      - key: GITHUB_TOKEN
-        sync: false
       - key: DOWNLOAD_URL
         value: https://github.com/morisastro/slavic-launcher/releases/latest
     autoDeploy: true

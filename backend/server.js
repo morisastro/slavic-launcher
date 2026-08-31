@@ -20,12 +20,10 @@ const DOWNLOAD_URL = process.env.DOWNLOAD_URL || "https://github.com/morisastro/
 app.get("/download", (req, res) => res.redirect(DOWNLOAD_URL));
 app.get("/api/download", (req, res) => res.redirect(DOWNLOAD_URL));
 
-initDb().then(() => {
-  seedDb();
-  app.listen(PORT, () => {
-    console.log(`Slavic Launcher backend running on port ${PORT}`);
-    console.log(`Storage: ${process.env.GITHUB_TOKEN ? "GitHub Gist" : "local file"}`);
-  });
+initDb();
+seedDb();
+app.listen(PORT, () => {
+  console.log(`Slavic Launcher backend running on port ${PORT}`);
 });
 
 // ---- public routes ----
